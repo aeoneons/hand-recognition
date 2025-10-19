@@ -1,0 +1,78 @@
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+import cv2
+from mediapipe.framework.formats import landmark_pb2
+
+
+cam = cv2.VideoCapture(0)
+frameWidth = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+frameHeight = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter('output.mp4', fourcc, 60.0, (frameWidth, frameHeight))
+
+
+
+
+modelPath = "C:\\Users\\Jacks\\OneDrive\\Documents\\GitHub\\hand-recognition\\hand_landmarker.task"
+
+
+mpDrawing = mp.solutions.drawing_utils
+mpStyle = mp.solutions.drawing_styles
+mpHands = mp.solutions.hands
+baseOption = mp.tasks.BaseOptions
+handLandMarker = mp.tasks.vision.HandLandmarker
+handLandMarkerOptions = mp.tasks.vision.HandLandmarkerOptions
+handLandMarkerResult = mp.tasks.vision.HandLandmarkerResult
+visionRunningMode = mp.tasks.vision.RunningMode
+
+latestResult = None
+
+def draw_result(result: handLandMarkerResult, output_image: mp.Image, timestamp_ms: int):
+    global latestResult
+    latestResult = result
+    
+options = handLandMarkerOptions(base_options = baseOption(model_asset_path = modelPath),
+                                running_mode = visionRunningMode.LIVE_STREAM,
+                                result_callback = draw_result)
+timestamp = 0
+
+
+
+with handLandMarker.create_from_options(options) as landmarker:
+    while True:
+        ret, frame = cam.read()
+        rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        out.write(frame)
+        mpImage = mp.Image(image_format = mp.ImageFormat.SRGB, data=rgbFrame)
+        npImage = mpImage.numpy_view().copy()
+
+        landmarker.detect_async(mpImage, timestamp)
+        timestamp += 17
+    
+        if latestResult and latestResult.hand_landmarks:
+            for hand in latestResult.hand_landmarks:
+                landmarkList = landmark_pb2.NormalizedLandmarkList(landmark=[landmark_pb2.NormalizedLandmark(x=l.x, y=l.y, z=l.z) for l in hand])
+                mpDrawing.draw_landmarks(
+                    npImage,
+                    landmarkList,
+                    mpHands.HAND_CONNECTIONS
+                )
+
+
+        newimage = cv2.cvtColor(npImage, cv2.COLOR_RGB2BGR)
+        out.write(newimage)
+        cv2.imshow("thing", newimage)
+
+    
+        if cv2.waitKey(1) == ord('h'):
+            break
+
+
+
+
+cam.release()
+out.release()
+cv2.destroyAllWindows()
