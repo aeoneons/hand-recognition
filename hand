@@ -31,12 +31,12 @@ timestamp = 0
 latestResult = None
 latestTimeStamp = -1
 camBool = True
+counter = 0
 
 frameQueue = Queue(maxsize=200)
 
 def writeThread():
     while True:
-        print(frameQueue.qsize())
         frame = frameQueue.get()
         if frame is None:
             break
@@ -73,7 +73,9 @@ with handLandMarker.create_from_options(options) as landmarker:
 
         mpImage = mp.Image(image_format = mp.ImageFormat.SRGB, data=rgbFrame) #converts frame to mediapipe format
 
-        landmarker.detect_async(mpImage, timestamp) #detects the hand async with the mp image, gives a list of the normalized x,y,z values of landmarks
+        if counter % 3 == 0:
+            landmarker.detect_async(mpImage, timestamp) #detects the hand async with the mp image, gives a list of the normalized x,y,z values of landmarks
+        counter += 1
         timestamp += 50
     
         if latestResult and latestResult.hand_landmarks: #checks if there is a iamge and if there is a hand in that image
