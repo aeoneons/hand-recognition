@@ -7,6 +7,7 @@ from threading import Thread
 from queue import Queue
 import pyautogui
 import os
+import math
 
 cam = cv2.VideoCapture(0)
 frameWidth = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -34,8 +35,14 @@ latestResult = None
 latestTimeStamp = -1
 camBool = True
 counter = 0
+gestureList = []
 
 frameQueue = Queue(maxsize=200) #queue for all the frames
+
+def checkDifference(number, othernumber, allowed):
+    lowerbound = othernumber - allowed
+    upperbound = othernumber + allowed
+    return (number - lowerbound >= 0) and (upperbound - number >= 0)
 
 def writeThread(): #function to get a frame from the queue and write it
     while True:
@@ -55,11 +62,11 @@ def draw_result(result: handLandMarkerResult, output_image: mp.Image, timestamp_
 options = handLandMarkerOptions(base_options = baseOption(model_asset_path = modelPath),
                                 running_mode = visionRunningMode.LIVE_STREAM,
                                 result_callback = draw_result,
-                                num_hands = 2)
+                                num_hands = 1)
 
-
-
-def thumbsup(hand): #function for decting a thumbs up
+#function for decting a thumbs up
+#takes in a list of the 21 landmarks
+def thumbsup(hand): 
     hand4 = hand[4]
 
     for i in range(21): 
@@ -67,6 +74,42 @@ def thumbsup(hand): #function for decting a thumbs up
         if difference > -0.03 and difference != 0.0: #checks if the thumbtip y is a decent bit bigger then the rest of the rest of the y
             return False
     return True
+
+#function for comparing a list of landmarks to another
+#hand is the list of landmarks taken from the live video
+#gesture is a list of landmarks that is stored
+def compareGesture(hand, gesture):
+    #we want to find the difference between hand[0] through hand[0-20]
+    # and compare it too the difference between gesture[0] through gesture[0-20]
+    # do this for the enitre land marks
+    #O(n^2)
+    allowedDeviation = .048
+    for landmark in range(21):
+        handx = hand[landmark].x
+        handy = hand[landmark].y
+        handz = hand[landmark].z
+        gesturex = gesture[landmark][0]
+        gesturey = gesture[landmark][1]
+        gesturez = gesture[landmark][2]
+
+
+        landmarkDist = math.sqrt((handx - gesturex)**2 + (handy - gesturey)**2 + (handz - gesturez)**2)
+        
+        for otherlandmark in range(landmark+1, 21):
+            
+            
+            otherLandmarkDist = math.sqrt((hand[otherlandmark].x - gesture[otherlandmark][0])**2 
+                                          + (hand[otherlandmark].y - gesture[otherlandmark][1])**2 
+                                          + (hand[otherlandmark].z - gesture[otherlandmark][2])**2)
+            
+            
+            
+            if not checkDifference(landmarkDist, otherLandmarkDist, allowedDeviation):
+                return False
+    
+    return True
+
+            
 
 
 
@@ -86,7 +129,7 @@ with handLandMarker.create_from_options(options) as landmarker:
 
         mpImage = mp.Image(image_format = mp.ImageFormat.SRGB, data=rgbFrame) #converts frame to mediapipe format
 
-        if counter % 3 == 0: #throttled so async does not fall behind and start lagging
+        if counter % 2 == 0: #throttled so async does not fall behind and start lagging
             landmarker.detect_async(mpImage, timestamp) #detects the hand async with the mp image, gives a list of the normalized x,y,z values of landmarks
         counter += 1
         timestamp += 50
@@ -95,9 +138,10 @@ with handLandMarker.create_from_options(options) as landmarker:
             for hand in latestResult.hand_landmarks: #latestResult.hand_landmarks is in list format with each handland cordinate its own list. iterates throug that list
                 
                 #gesture control
-                if timestamp % 1000 == 0: #throttles the function call so it will only check every second
-                    if thumbsup(hand):
-                        os.startfile("C:\XboxGames\Minecraft Launcher\Content\Minecraft.exe")
+
+                if timestamp % 1000 == 0 and len(gestureList) != 0: #throttles the function call so it will only check every second
+                    if compareGesture(hand, gestureList[0]):
+                        print(f"Gesture Detected on the {timestamp/50} frame")
 
 
                 
@@ -123,6 +167,12 @@ with handLandMarker.create_from_options(options) as landmarker:
             break
         if key == ord('l'):
             flip()
+        if key == ord('o'):
+            print("\n"*5)
+            hand = latestResult.hand_landmarks[0]
+           
+            gestureList = [[(landmark.x, landmark.y, landmark.z) for landmark in hand]]
+        
 
 
 
