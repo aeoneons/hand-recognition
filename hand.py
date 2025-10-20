@@ -93,7 +93,7 @@ def compareGesture(hand, gesture):
         gesturez = gesture[landmark][2]
 
 
-        landmarkDist = math.sqrt((handx - gesturex)**2 + (handy - gesturey)**2 + (handz - gesturez)**2)
+        landmarkDist = math.sqrt((handx - gesturex)**2 + (handy - gesturey)**2 + (handz - gesturez)**2) #shortest distance from hand[landmark] to gesture[landmark]
         
         for otherlandmark in range(landmark+1, 21):
             
@@ -101,7 +101,6 @@ def compareGesture(hand, gesture):
             otherLandmarkDist = math.sqrt((hand[otherlandmark].x - gesture[otherlandmark][0])**2 
                                           + (hand[otherlandmark].y - gesture[otherlandmark][1])**2 
                                           + (hand[otherlandmark].z - gesture[otherlandmark][2])**2)
-            
             
             
             if not checkDifference(landmarkDist, otherLandmarkDist, allowedDeviation):
@@ -140,8 +139,9 @@ with handLandMarker.create_from_options(options) as landmarker:
                 #gesture control
 
                 if timestamp % 1000 == 0 and len(gestureList) != 0: #throttles the function call so it will only check every second
-                    if compareGesture(hand, gestureList[0]):
-                        print(f"Gesture Detected on the {timestamp/50} frame")
+                    for i in range(len(gestureList)):
+                        if compareGesture(hand, gestureList[i]):
+                            print(f"Gesture Detected on the {timestamp/50} frame, gesture {i}")
 
 
                 
@@ -169,9 +169,8 @@ with handLandMarker.create_from_options(options) as landmarker:
             flip()
         if key == ord('o'):
             print("\n"*5)
-            hand = latestResult.hand_landmarks[0]
-           
-            gestureList = [[(landmark.x, landmark.y, landmark.z) for landmark in hand]]
+            hand = latestResult.hand_landmarks[0]       
+            gestureList.append([(landmark.x, landmark.y, landmark.z) for landmark in hand])
         
 
 
