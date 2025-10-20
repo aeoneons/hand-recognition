@@ -3,14 +3,14 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import cv2
 from mediapipe.framework.formats import landmark_pb2
-
+from threading import Thread
+from queue import Queue
 
 cam = cv2.VideoCapture(0)
 frameWidth = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
 frameHeight = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter('output.mp4', fourcc, 60.0, (frameWidth, frameHeight))
+out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (frameWidth, frameHeight))
 
 
 
@@ -26,53 +26,85 @@ handLandMarker = mp.tasks.vision.HandLandmarker
 handLandMarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 handLandMarkerResult = mp.tasks.vision.HandLandmarkerResult
 visionRunningMode = mp.tasks.vision.RunningMode
+timestamp = 0
 
 latestResult = None
+latestTimeStamp = -1
+camBool = True
+
+frameQueue = Queue(maxsize=200)
+
+def writeThread():
+    while True:
+        print(frameQueue.qsize())
+        frame = frameQueue.get()
+        if frame is None:
+            break
+        out.write(frame)
+
+
 
 def draw_result(result: handLandMarkerResult, output_image: mp.Image, timestamp_ms: int):
-    global latestResult
-    latestResult = result
+    global latestResult, latestTimeStamp
+    if timestamp_ms > latestTimeStamp: #only keeps the newest handlandmark results
+        latestResult = result
+        latestTimeStamp = timestamp_ms
     
 options = handLandMarkerOptions(base_options = baseOption(model_asset_path = modelPath),
                                 running_mode = visionRunningMode.LIVE_STREAM,
-                                result_callback = draw_result)
-timestamp = 0
+                                result_callback = draw_result,
+                                num_hands = 2)
 
 
 
+def flip():
+    global camBool
+    if camBool:
+        camBool = False
+    else:
+        camBool = True
+        
 with handLandMarker.create_from_options(options) as landmarker:
+    outThread = Thread(target = writeThread, daemon=True)
+    outThread.start()
     while True:
-        ret, frame = cam.read()
-        rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        ret, frame = cam.read() #starts of the live strean, frame is the image in numpy format and ret is either true/false
+        rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) #coverts the frame to colored
 
-        out.write(frame)
-        mpImage = mp.Image(image_format = mp.ImageFormat.SRGB, data=rgbFrame)
-        npImage = mpImage.numpy_view().copy()
+        mpImage = mp.Image(image_format = mp.ImageFormat.SRGB, data=rgbFrame) #converts frame to mediapipe format
 
-        landmarker.detect_async(mpImage, timestamp)
-        timestamp += 17
+        landmarker.detect_async(mpImage, timestamp) #detects the hand async with the mp image, gives a list of the normalized x,y,z values of landmarks
+        timestamp += 50
     
-        if latestResult and latestResult.hand_landmarks:
-            for hand in latestResult.hand_landmarks:
-                landmarkList = landmark_pb2.NormalizedLandmarkList(landmark=[landmark_pb2.NormalizedLandmark(x=l.x, y=l.y, z=l.z) for l in hand])
-                mpDrawing.draw_landmarks(
-                    npImage,
+        if latestResult and latestResult.hand_landmarks: #checks if there is a iamge and if there is a hand in that image
+            for hand in latestResult.hand_landmarks: #latestResult.hand_landmarks is in list format with each handland cordinate its own list. iterates throug that list
+                
+                
+                
+                landmarkList = landmark_pb2.NormalizedLandmarkList( #nomlizes each cordinates and puts in the object that mpDrawing.draw_landmarks wants
+                    landmark=[landmark_pb2.NormalizedLandmark(x=l.x, y=l.y, z=l.z) for l in hand]) #list comeprenshion that makes the list of x,y,z to mediapipe format
+                mpDrawing.draw_landmarks( 
+                    rgbFrame,
                     landmarkList,
                     mpHands.HAND_CONNECTIONS
                 )
 
+        if camBool:
+            drawnImage = cv2.cvtColor(rgbFrame, cv2.COLOR_RGB2BGR) #converts the rgbframe that was drawn on to cv2 format so it can be shown
+            if not frameQueue.full():
+                frameQueue.put(drawnImage)  
+            cv2.imshow("thing", drawnImage)
 
-        newimage = cv2.cvtColor(npImage, cv2.COLOR_RGB2BGR)
-        out.write(newimage)
-        cv2.imshow("thing", newimage)
-
-    
-        if cv2.waitKey(1) == ord('h'):
+        key = cv2.waitKey(1)
+        if key == ord('h'):
             break
+        if key == ord('l'):
+            flip()
 
 
 
 
+frameQueue.put(None)
 cam.release()
 out.release()
 cv2.destroyAllWindows()
