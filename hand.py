@@ -5,6 +5,7 @@ import cv2
 from mediapipe.framework.formats import landmark_pb2
 from threading import Thread
 from queue import Queue
+import pyautogui
 import os
 
 cam = cv2.VideoCapture(0)
