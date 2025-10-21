@@ -1,0 +1,25 @@
+<!doctype html>
+
+<title>Hand Reconigtion</title>
+
+{% if person %}
+  <h1>Hello {{ person }}!</h1>
+{% else %}
+  <h1>Hello, World!</h1>
+{% endif %}
+
+
+<body>
+<form action= "{{ url_for('button_action') }}" method='post'> 
+
+    <button type="submit">Click Me</button>
+
+</form>
+<p>it work</p>
+
+{% if message %}
+  <p>{{ message }}</p>
+{% endif %}
+
+    
+</body>

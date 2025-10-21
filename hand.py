@@ -8,6 +8,7 @@ from queue import Queue
 import pyautogui
 import os
 import math
+from flask import Flask
 
 cam = cv2.VideoCapture(0)
 frameWidth = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
