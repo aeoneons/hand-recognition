@@ -54,7 +54,7 @@ def writeThread(): #function to get a frame from the queue and write it
 
 
 
-def draw_result(result: handLandMarkerResult, output_image: mp.Image, timestamp_ms: int):
+def draw_result(result: handLandMarkerResult, output_image: mp.Image, timestamp_ms: int): # type: ignore
     global latestResult, latestTimeStamp
     if timestamp_ms > latestTimeStamp: #only keeps the newest handlandmark results
         latestResult = result

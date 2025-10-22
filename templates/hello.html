@@ -1,6 +1,6 @@
 <!doctype html>
-
-<title>Hand Reconigtion</title>
+<title> Hand Reconigtion </title>
+<html lang="en">
 
 {% if person %}
   <h1>Hello {{ person }}!</h1>
@@ -11,11 +11,22 @@
 
 <body>
 <form action= "{{ url_for('button_action') }}" method='post'> 
-
     <button type="submit">Click Me</button>
-
 </form>
-<p>it work</p>
+
+<form action="/drop_down" method="POST">
+  <label for="gesturedropdown"> Choose a Gesture</label>
+  <select name="gesturedropdown" id = 'gesturedropdown'>
+   
+    {% for gesture in gestures %}
+
+      <option value="{{gesture}}" > {{gesture }}</option>
+
+    {% endfor %}
+
+  </select>
+  <button type = 'submit'> Submit </button>
+</form>
 
 {% if message %}
   <p>{{ message }}</p>
@@ -23,3 +34,5 @@
 
     
 </body>
+
+</html>

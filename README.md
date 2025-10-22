@@ -1,5 +1,3 @@
-A simple hand recognition program built in python that uses google media pipe hand land markers
+A simple hand recognition program built in python that uses google media pipe hand land markers.
 
-Throttled because my current machine can not handle all the frame calls
-
-I am planning on adding a feature for you to capture a certian hand arrangment, feed in the hand land marks and then asigning a certian action to that gesture
+Front end is using Flask, hoping to add in a feature where you can upload an image of your hand, and select a predetermined outcome and then the program will detect that gesture then run that outcome.
