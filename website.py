@@ -1,6 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, Response
 import os
 from werkzeug.utils import secure_filename
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+import cv2
+from mediapipe.framework.formats import landmark_pb2
+from threading import Thread
+from queue import Queue
+import base64
+import os
+import math
+from handframe import proccesFrame
+import numpy
+from handphoto import proccesFramePhoto
 
 
 
@@ -12,16 +25,39 @@ name = "Jessalyn"
 def hello_world(input = "Jess"):
     global name 
     name = input
-    return render_template("hello.html", person=name, gestures = gestureslist)
+    return render_template("hand.html", person=name, gestures = gestureslist)
 
-@app.route('/button_action', methods=['POST'])
-def button_action():
-    print("I GOT PRESSED")
-    message = "I GOT PRESSEDs"
+@app.route('/upload', methods=['POST'])
+def upload():
+    file = request.files['file']
+    filebytes = file.read()
+    npfile = numpy.frombuffer(filebytes, numpy.uint8)
+    frame = cv2.imdecode(npfile, cv2.IMREAD_COLOR)
+    proccesedFrame = proccesFramePhoto(frame)[0]
+    ret, jpeg = cv2.imencode(".jpg", proccesedFrame)
+    jpegbytes = jpeg.tobytes()
+    img = base64.b64encode(jpegbytes).decode('utf-8')
     
-    return render_template("hello.html", person=name,  message=message, gestures = gestureslist)
+    return render_template("hand.html", person=name, gestures = gestureslist, result_url = img)
 
 @app.route('/drop_down', methods=['GET', 'POST'])
 def dropdown():
     
-    return render_template("hello.html", person = name, message = "NEW CLICK", gestures = gestureslist)
+    return render_template("hand.html", person = name, message = "NEW CLICK", gestures = gestureslist)
+
+def generateFrame():
+    cam = cv2.VideoCapture(0)
+
+    while True:
+        ret, frame = cam.read()
+
+        proccessedFrame = proccesFrame(frame)
+
+        ret, jpeg = cv2.imencode(".jpg", proccessedFrame)
+        jpegbytes = jpeg.tobytes()
+
+        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpegbytes + b'\r\n')
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generateFrame(), mimetype='multipart/x-mixed-replace; boundary=frame')
