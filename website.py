@@ -20,12 +20,13 @@ from handphoto import proccesFramePhoto
 app = Flask(__name__)
 gestureslist = ["THUMBS UP", "POINTER UP", "RING UP", "FIST", "PALMS SPREAD"]
 name = "Jessalyn"
+handMarks = '[]'
 
 @app.route("/")
 def hello_world(input = "Jess"):
     global name 
     name = input
-    return render_template("hand.html", person=name, gestures = gestureslist)
+    return render_template("hand.html", person=name, gestures = gestureslist, handMarks = handMarks)
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -46,12 +47,15 @@ def dropdown():
     return render_template("hand.html", person = name, message = "NEW CLICK", gestures = gestureslist)
 
 def generateFrame():
+    global handMarks
     cam = cv2.VideoCapture(0)
 
     while True:
         ret, frame = cam.read()
 
-        proccessedFrame = proccesFrame(frame)
+        stuff = proccesFrame(frame)
+        proccessedFrame = stuff[0]
+        handMarks = stuff[1]
 
         ret, jpeg = cv2.imencode(".jpg", proccessedFrame)
         jpegbytes = jpeg.tobytes()

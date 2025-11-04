@@ -148,7 +148,10 @@ def proccesFrame(frame):
                 mpHands.HAND_CONNECTIONS
             )
     drawnImg = cv2.cvtColor(rgbFrame, cv2.COLOR_RGB2BGR)
-    return drawnImg
+
+    hand = latestResult.hand_landmarks[0]       
+    return (drawnImg, [(landmark.x, landmark.y, landmark.z) for landmark in hand])
+
         
 
 
