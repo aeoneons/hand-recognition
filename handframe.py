@@ -38,7 +38,7 @@ latestTimeStamp = -1
 camBool = True
 counter = 0
 gestureList = []
-
+hand = None
 frameQueue = Queue(maxsize=200) #queue for all the frames
 
 def checkDifference(number, othernumber, allowed):
@@ -130,12 +130,13 @@ def proccesFrame(frame):
 
     mpImage = mp.Image(image_format = mp.ImageFormat.SRGB, data=rgbFrame) #converts frame to mediapipe format
 
-    if counter % 2 == 0: #throttled so async does not fall behind and start lagging
+    if counter % 5 == 0: #throttled so async does not fall behind and start lagging
         landmarker.detect_async(mpImage, timestamp) #detects the hand async with the mp image, gives a list of the normalized x,y,z values of landmarks
     counter += 1
     timestamp += 50
 
     if latestResult and latestResult.hand_landmarks: #checks if there is a iamge and if there is a hand in that image
+        global hand
         for hand in latestResult.hand_landmarks: #latestResult.hand_landmarks is in list format with each handland cordinate its own list. iterates throug that list
             
             #landmark drawing
@@ -147,11 +148,15 @@ def proccesFrame(frame):
                 landmarkList,
                 mpHands.HAND_CONNECTIONS
             )
+        if len(latestResult.hand_landmarks) > 0:
+            hand = latestResult.hand_landmarks[0]
     drawnImg = cv2.cvtColor(rgbFrame, cv2.COLOR_RGB2BGR)
 
-    hand = latestResult.hand_landmarks[0]       
-    return (drawnImg, [(landmark.x, landmark.y, landmark.z) for landmark in hand])
-
+    if hand != None:
+        return (drawnImg, [(landmark.x, landmark.y, landmark.z) for landmark in hand])
+    return ((drawnImg, []))
+    
+    #return (drawnImg)
         
 
 

@@ -34,7 +34,19 @@
 {% endif %}
 
 <img src = "{{url_for('video_feed')}}" width="640" height="480">
-<h1>Hello {{ handMarks }}</h1>
+
+<pre id="landmarks"> None </pre>
+
+<script>
+async function updateHandMarks() {
+  const data = await fetch("/getLandMarks")
+  const jsonData = await data.json()
+  document.getElementById('landmarks').innerText = JSON.stringify(jsonData,null,2)
+}
+setInterval(updateHandMarks, 500)
+</script>
+
+
 </body>
 
 </html>

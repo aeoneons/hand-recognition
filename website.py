@@ -14,6 +14,7 @@ import math
 from handframe import proccesFrame
 import numpy
 from handphoto import proccesFramePhoto
+from flask import jsonify
 
 
 
@@ -53,14 +54,19 @@ def generateFrame():
     while True:
         ret, frame = cam.read()
 
-        stuff = proccesFrame(frame)
-        proccessedFrame = stuff[0]
-        handMarks = stuff[1]
+     
+        proccessedFrame, handMarks = proccesFrame(frame)
+       
 
         ret, jpeg = cv2.imencode(".jpg", proccessedFrame)
         jpegbytes = jpeg.tobytes()
 
         yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + jpegbytes + b'\r\n')
+
+@app.route('/getLandMarks')
+def getLandMarks():
+    global handMarks
+    return jsonify({'landmarks': handMarks})
 
 @app.route('/video_feed')
 def video_feed():
