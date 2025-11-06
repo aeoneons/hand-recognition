@@ -18,6 +18,7 @@ from flask import jsonify
 
 
 
+
 app = Flask(__name__)
 gestureslist = ["THUMBS UP", "POINTER UP", "RING UP", "FIST", "PALMS SPREAD"]
 name = "Jessalyn"
@@ -27,7 +28,7 @@ handMarks = '[]'
 def hello_world(input = "Jess"):
     global name 
     name = input
-    return render_template("hand.html", person=name, gestures = gestureslist, handMarks = handMarks)
+    return render_template("hand.html", person=name, gestures = gestureslist, handMarks = "Upload First")
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -35,12 +36,12 @@ def upload():
     filebytes = file.read()
     npfile = numpy.frombuffer(filebytes, numpy.uint8)
     frame = cv2.imdecode(npfile, cv2.IMREAD_COLOR)
-    proccesedFrame = proccesFramePhoto(frame)[0]
+    proccesedFrame, landmarks = proccesFramePhoto(frame)
     ret, jpeg = cv2.imencode(".jpg", proccesedFrame)
     jpegbytes = jpeg.tobytes()
     img = base64.b64encode(jpegbytes).decode('utf-8')
     
-    return render_template("hand.html", person=name, gestures = gestureslist, result_url = img)
+    return render_template("hand.html", person=name, gestures = gestureslist, result_url = img, handmarksphoto=str(landmarks))
 
 @app.route('/drop_down', methods=['GET', 'POST'])
 def dropdown():

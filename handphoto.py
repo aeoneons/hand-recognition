@@ -24,6 +24,7 @@ handLandMarker = mp.tasks.vision.HandLandmarker
 handLandMarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 handLandMarkerResult = mp.tasks.vision.HandLandmarkerResult
 visionRunningMode = mp.tasks.vision.RunningMode
+hand = []
 
 
 
@@ -43,7 +44,7 @@ landmarker = handLandMarker.create_from_options(options)
 
 
 def proccesFramePhoto(frame):
-
+    global hand
     
 
     rgbFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) #coverts the frame to colored
@@ -53,6 +54,8 @@ def proccesFramePhoto(frame):
     result = landmarker.detect(mpImage) #detects the hand async with the mp image, gives a list of the normalized x,y,z values of landmarks
 
     if result and result.hand_landmarks: #checks if there is a iamge and if there is a hand in that image
+        
+        hand = result.hand_landmarks[0]
         for hand in result.hand_landmarks: #latestResult.hand_landmarks is in list format with each handland cordinate its own list. iterates throug that list
             
             #landmark drawing
@@ -66,7 +69,7 @@ def proccesFramePhoto(frame):
             )
     drawnImg = cv2.cvtColor(rgbFrame, cv2.COLOR_RGB2BGR)
 
-    hand = result.hand_landmarks[0]       
+           
     return (drawnImg, [(landmark.x, landmark.y, landmark.z) for landmark in hand])
         
 

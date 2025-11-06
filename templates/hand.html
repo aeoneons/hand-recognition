@@ -35,13 +35,17 @@
 
 <img src = "{{url_for('video_feed')}}" width="640" height="480">
 
-<pre id="landmarks"> None </pre>
+<h1> Live Feed </h1>
+<pre id="landmarksLive"> None </pre>
+
+<h1> Photo </h1>
+<pre> {{handmarksphoto}} </pre>
 
 <script>
 async function updateHandMarks() {
   const data = await fetch("/getLandMarks")
   const jsonData = await data.json()
-  document.getElementById('landmarks').innerText = JSON.stringify(jsonData,null,2)
+  document.getElementById('landmarksLive').innerText = JSON.stringify(jsonData,null, 0)
 }
 setInterval(updateHandMarks, 500)
 </script>
