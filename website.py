@@ -15,6 +15,7 @@ from handframe import proccesFrame
 import numpy
 from handphoto import proccesFramePhoto
 from flask import jsonify
+from gesture import *
 
 
 
@@ -23,6 +24,7 @@ app = Flask(__name__)
 gestureslist = ["THUMBS UP", "POINTER UP", "RING UP", "FIST", "PALMS SPREAD"]
 name = "Jessalyn"
 handMarks = '[]'
+gestures = []
 
 @app.route("/")
 def hello_world(input = "Jess"):
@@ -32,11 +34,13 @@ def hello_world(input = "Jess"):
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    global gestures
     file = request.files['file']
     filebytes = file.read()
     npfile = numpy.frombuffer(filebytes, numpy.uint8)
     frame = cv2.imdecode(npfile, cv2.IMREAD_COLOR)
     proccesedFrame, landmarks = proccesFramePhoto(frame)
+    gestures.append(landmarks)
     ret, jpeg = cv2.imencode(".jpg", proccesedFrame)
     jpegbytes = jpeg.tobytes()
     img = base64.b64encode(jpegbytes).decode('utf-8')
