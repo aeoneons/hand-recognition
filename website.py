@@ -73,6 +73,12 @@ def getLandMarks():
     global handMarks
     return jsonify({'landmarks': handMarks})
 
+@app.route('/checkGesture')
+def checkGesture():
+    global gestures
+    if len(gestures) > 0:
+        
+
 @app.route('/video_feed')
 def video_feed():
     return Response(generateFrame(), mimetype='multipart/x-mixed-replace; boundary=frame')
